@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inkfold/domain/plugin_catalog.dart';
+import 'package:inkfold_pdf_plugin/inkfold_pdf_plugin.dart';
 import 'package:inkfold_reader_api/inkfold_reader_api.dart';
 import 'package:inkfold_text_plugin/inkfold_text_plugin.dart';
 
@@ -32,5 +33,20 @@ void main() {
       () => catalog.resolve(SourceDescriptor(name: 'book.pdf', bytes: Uint8List(0))),
       throwsA(isA<UnsupportedBookFormatException>()),
     );
+  });
+
+  test('resolves the built-in PDF plugin from its signature', () async {
+    final catalog = PluginCatalog(const <BookFormatPlugin>[
+      TextFormatPlugin(),
+      PdfFormatPlugin(),
+    ]);
+    final plugin = await catalog.resolve(
+      SourceDescriptor(
+        name: 'book.pdf',
+        bytes: Uint8List.fromList(<int>[0x25, 0x50, 0x44, 0x46, 0x2d]),
+      ),
+    );
+
+    expect(plugin.manifest.id, 'app.inkfold.pdf');
   });
 }

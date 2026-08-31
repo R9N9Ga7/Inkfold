@@ -104,15 +104,20 @@ final class ReaderSection {
   final List<ReaderBlock> blocks;
 }
 
-final class ReflowableDocument {
-  const ReflowableDocument({
-    required this.id,
-    required this.title,
-    required this.sections,
-  });
+sealed class ReaderDocument {
+  const ReaderDocument({required this.id, required this.title});
 
   final String id;
   final String title;
+}
+
+final class ReflowableDocument extends ReaderDocument {
+  const ReflowableDocument({
+    required super.id,
+    required super.title,
+    required this.sections,
+  });
+
   final List<ReaderSection> sections;
 
   String get plainText => sections
@@ -123,11 +128,23 @@ final class ReflowableDocument {
   int get characterCount => plainText.length;
 }
 
+final class FixedLayoutDocument extends ReaderDocument {
+  const FixedLayoutDocument({
+    required super.id,
+    required super.title,
+    required this.bytes,
+    required this.mediaType,
+  });
+
+  final Uint8List bytes;
+  final String mediaType;
+}
+
 abstract interface class BookFormatPlugin {
   PluginManifest get manifest;
   Future<double> probe(SourceDescriptor source);
   Future<ImportedBook> importBook(SourceDescriptor source);
-  Future<ReflowableDocument> openDocument(
+  Future<ReaderDocument> openDocument(
     String documentId,
     String title,
     PluginBookPayload payload,

@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inkfold_pdf_plugin/inkfold_pdf_plugin.dart';
+import 'package:inkfold_reader_api/inkfold_reader_api.dart';
 import 'package:inkfold_text_plugin/inkfold_text_plugin.dart';
 
 import 'data/app_database.dart';
@@ -12,7 +14,10 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 });
 
 final pluginCatalogProvider = Provider<PluginCatalog>((ref) {
-  return PluginCatalog(const <TextFormatPlugin>[TextFormatPlugin()]);
+  return PluginCatalog(const <BookFormatPlugin>[
+    TextFormatPlugin(),
+    PdfFormatPlugin(),
+  ]);
 });
 
 final booksProvider = StreamProvider<List<Book>>((ref) {
