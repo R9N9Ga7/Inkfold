@@ -403,23 +403,36 @@ final class _ReaderToolbar extends StatelessWidget {
     right: 0,
     child: Material(
       color: colors.chrome.withValues(alpha: 0.97),
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: <Widget>[
-              const SizedBox(width: 8),
-              IconButton(tooltip: 'Back to library', onPressed: onBack, icon: const Icon(Icons.arrow_back_rounded)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
-              ),
-              IconButton(tooltip: 'Add bookmark', onPressed: onBookmark, icon: const Icon(Icons.bookmark_add_outlined)),
-              IconButton(tooltip: 'Bookmarks', onPressed: onBookmarks, icon: const Icon(Icons.bookmarks_outlined)),
-              IconButton(tooltip: 'Reading appearance', onPressed: onAppearance, icon: const Icon(Icons.text_fields_rounded)),
-              const SizedBox(width: 8),
-            ],
+      child: IconButtonTheme(
+        data: IconButtonThemeData(
+          style: IconButton.styleFrom(foregroundColor: colors.text),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: SizedBox(
+            height: 64,
+            child: Row(
+              children: <Widget>[
+                const SizedBox(width: 8),
+                IconButton(tooltip: 'Back to library', onPressed: onBack, icon: const Icon(Icons.arrow_back_rounded)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.text,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(tooltip: 'Add bookmark', onPressed: onBookmark, icon: const Icon(Icons.bookmark_add_outlined)),
+                IconButton(tooltip: 'Bookmarks', onPressed: onBookmarks, icon: const Icon(Icons.bookmarks_outlined)),
+                IconButton(tooltip: 'Reading appearance', onPressed: onAppearance, icon: const Icon(Icons.text_fields_rounded)),
+                const SizedBox(width: 8),
+              ],
+            ),
           ),
         ),
       ),
@@ -481,20 +494,36 @@ final class _ProgressBarState extends State<_ProgressBar> {
       bottom: widget.visible ? 0 : -112,
       child: Material(
         color: widget.colors.chrome.withValues(alpha: 0.97),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Slider(value: value, onChanged: widget.onSeek),
-                ),
-                SizedBox(
-                  width: 46,
-                  child: Text('${(value * 100).round()}%', textAlign: TextAlign.end, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                ),
-              ],
+        child: SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: widget.colors.accent,
+            inactiveTrackColor: widget.colors.text.withValues(alpha: 0.22),
+            thumbColor: widget.colors.accent,
+            overlayColor: widget.colors.accent.withValues(alpha: 0.12),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Slider(value: value, onChanged: widget.onSeek),
+                  ),
+                  SizedBox(
+                    width: 46,
+                    child: Text(
+                      '${(value * 100).round()}%',
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        color: widget.colors.text,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -510,6 +539,19 @@ Widget buildReaderProgressBarForTest(ScrollController controller) {
     colors: _ReaderColors.from(ReaderPalette.paper),
     controller: controller,
     onSeek: (_) {},
+  );
+}
+
+@visibleForTesting
+Widget buildReaderToolbarForTest() {
+  return _ReaderToolbar(
+    visible: true,
+    colors: _ReaderColors.from(ReaderPalette.paper),
+    title: 'Book title',
+    onBack: () {},
+    onBookmark: () {},
+    onBookmarks: () {},
+    onAppearance: () {},
   );
 }
 
