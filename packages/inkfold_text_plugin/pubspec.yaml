@@ -1,0 +1,11 @@
+name: inkfold_text_plugin
+description: Built-in plain-text format plugin for Inkfold.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  inkfold_reader_api:
+    path: ../inkfold_reader_api

@@ -1,0 +1,7 @@
+name: inkfold_reader_api
+description: Public, data-oriented contracts for Inkfold format plugins.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.2
