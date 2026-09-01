@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart' as material_ui;
 
 import 'core/inkfold_theme.dart';
 import 'domain/reading_preferences.dart';
@@ -8,6 +9,11 @@ import 'providers.dart';
 import 'ui/library_screen.dart';
 import 'ui/reader_screen.dart';
 import 'ui/settings_screen.dart';
+
+@visibleForTesting
+const inkfoldLocalizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  material_ui.DefaultMaterialLocalizations.delegate,
+];
 
 final routerProvider = Provider<GoRouter>((ref) => GoRouter(
   initialLocation: '/library',
@@ -39,6 +45,7 @@ final class InkfoldApp extends ConsumerWidget {
       theme: InkfoldTheme.light(),
       darkTheme: InkfoldTheme.dark(),
       themeMode: themeMode,
+      localizationsDelegates: inkfoldLocalizationsDelegates,
       routerConfig: ref.watch(routerProvider),
     );
   }
