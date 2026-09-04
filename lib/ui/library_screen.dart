@@ -30,7 +30,7 @@ final class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Future<void> _pickFiles() async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const <String>['txt', 'text', 'pdf'],
+      allowedExtensions: const <String>['txt', 'text', 'pdf', 'fb2'],
     );
     if (result.isEmpty) return;
     await _importFiles(result.map((file) => file.xFile));
@@ -205,7 +205,7 @@ final class _EmptyLibrary extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Choose a text or PDF book, or drop one anywhere in this window.',
+              'Choose a text, PDF, or FB2 book, or drop one anywhere in this window.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

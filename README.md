@@ -1,8 +1,9 @@
 # Inkfold
 
 Inkfold is a local-first book reader built with Flutter for Android and the web.
-The default build supports plain-text books. Format support is provided through
-versioned, data-oriented plugins under `packages/`.
+The app renders reflowable text by default. Plain text, PDF, and FictionBook 2
+format support is provided through versioned, data-oriented plugins under
+`packages/`.
 
 ## Run
 

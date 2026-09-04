@@ -204,22 +204,40 @@ final class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 44),
-                                for (final block in document.sections.expand(
-                                  (section) => section.blocks,
-                                ))
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 22),
-                                    child: Text(
-                                      block.text,
-                                      textAlign: preferences.textAlign,
-                                      style: TextStyle(
-                                        color: colors.text,
-                                        fontFamily: 'Literata',
-                                        fontSize: preferences.fontSize,
-                                        height: preferences.lineHeight,
+                                for (final section in document.sections) ...<Widget>[
+                                  if (section.title != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: 14,
+                                        bottom: 24,
+                                      ),
+                                      child: Text(
+                                        section.title!,
+                                        style: TextStyle(
+                                          color: colors.text,
+                                          fontFamily: 'Literata',
+                                          fontSize: (preferences.fontSize * 1.35)
+                                              .clamp(22, 34),
+                                          height: 1.25,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  for (final block in section.blocks)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 22),
+                                      child: Text(
+                                        block.text,
+                                        textAlign: preferences.textAlign,
+                                        style: TextStyle(
+                                          color: colors.text,
+                                          fontFamily: 'Literata',
+                                          fontSize: preferences.fontSize,
+                                          height: preferences.lineHeight,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ],
                             ),
                           ),

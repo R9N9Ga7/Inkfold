@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:inkfold_fb2_plugin/inkfold_fb2_plugin.dart';
 import 'package:inkfold_pdf_plugin/inkfold_pdf_plugin.dart';
 import 'package:inkfold_reader_api/inkfold_reader_api.dart';
 import 'package:inkfold_text_plugin/inkfold_text_plugin.dart';
@@ -17,6 +18,7 @@ final pluginCatalogProvider = Provider<PluginCatalog>((ref) {
   return PluginCatalog(const <BookFormatPlugin>[
     TextFormatPlugin(),
     PdfFormatPlugin(),
+    Fb2FormatPlugin(),
   ]);
 });
 

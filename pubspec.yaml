@@ -46,6 +46,8 @@ dependencies:
     path: packages/inkfold_reader_api
   inkfold_pdf_plugin:
     path: packages/inkfold_pdf_plugin
+  inkfold_fb2_plugin:
+    path: packages/inkfold_fb2_plugin
   inkfold_text_plugin:
     path: packages/inkfold_text_plugin
 

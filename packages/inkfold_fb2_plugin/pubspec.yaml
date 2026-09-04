@@ -1,0 +1,12 @@
+name: inkfold_fb2_plugin
+description: Built-in FictionBook 2 format plugin for Inkfold.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  inkfold_reader_api:
+    path: ../inkfold_reader_api
+  xml: ^7.0.1
