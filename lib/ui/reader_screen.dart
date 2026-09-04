@@ -89,6 +89,11 @@ final class _ReaderScreenState extends ConsumerState<ReaderScreen>
         .saveProgress(loaded.book.id, progress: progress, position: position);
   }
 
+  void _leaveReader() {
+    unawaited(_saveProgress());
+    context.go('/library');
+  }
+
   void _restoreProgress(Book book) {
     if (_restored || book.progress <= 0) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -164,8 +169,8 @@ final class _ReaderScreenState extends ConsumerState<ReaderScreen>
           );
         }
         _restoreProgress(loaded.book);
-        return PopScope(
-          onPopInvokedWithResult: (_, result) => _saveProgress(),
+        return _ReaderBackScope(
+          onBack: _leaveReader,
           child: Scaffold(
             backgroundColor: colors.background,
             body: Stack(
@@ -250,10 +255,7 @@ final class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   visible: _controlsVisible,
                   colors: colors,
                   title: loaded.book.title,
-                  onBack: () {
-                    _saveProgress();
-                    context.go('/library');
-                  },
+                  onBack: _leaveReader,
                   onBookmark: () => _addBookmark(loaded.book, document),
                   onBookmarks: () => _showBookmarks(loaded.book, document),
                   onAppearance: () => _showAppearance(preferences),
@@ -549,6 +551,11 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
         );
   }
 
+  void _leaveReader() {
+    unawaited(_saveProgress());
+    context.go('/library');
+  }
+
   void _seek(double progress) {
     if (_pageCount <= 0 || !_controller.isReady) return;
     final page = _pageCount == 1
@@ -582,8 +589,8 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
   @override
   Widget build(BuildContext context) {
     final padding = MediaQuery.paddingOf(context);
-    return PopScope(
-      onPopInvokedWithResult: (_, result) => _saveProgress(),
+    return _ReaderBackScope(
+      onBack: _leaveReader,
       child: Scaffold(
         backgroundColor: widget.colors.background,
         body: Stack(
@@ -599,10 +606,7 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
               visible: true,
               colors: widget.colors,
               title: widget.book.title,
-              onBack: () {
-                _saveProgress();
-                context.go('/library');
-              },
+              onBack: _leaveReader,
             ),
             _PdfProgressBar(
               colors: widget.colors,
@@ -620,6 +624,22 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
       ),
     );
   }
+}
+
+final class _ReaderBackScope extends StatelessWidget {
+  const _ReaderBackScope({required this.onBack, required this.child});
+
+  final VoidCallback onBack;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) onBack();
+    },
+    child: child,
+  );
 }
 
 final class _ReaderToolbar extends StatelessWidget {
@@ -905,6 +925,14 @@ Widget buildReaderToolbarForTest() {
     onBookmarks: () {},
     onAppearance: () {},
   );
+}
+
+@visibleForTesting
+Widget buildReaderBackScopeForTest({
+  required VoidCallback onBack,
+  required Widget child,
+}) {
+  return _ReaderBackScope(onBack: onBack, child: child);
 }
 
 final class _ReaderSlider extends StatelessWidget {

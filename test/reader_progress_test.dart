@@ -3,6 +3,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inkfold/ui/reader_screen.dart';
 
 void main() {
+  testWidgets('phone back is handled inside the reader', (tester) async {
+    var backCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: buildReaderBackScopeForTest(
+          onBack: () => backCount++,
+          child: const Scaffold(body: Text('Reader')),
+        ),
+      ),
+    );
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+
+    expect(backCount, 1);
+    expect(find.text('Reader'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('progress bar tolerates an attached pre-layout controller', (
     tester,
   ) async {
