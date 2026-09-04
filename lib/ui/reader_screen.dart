@@ -8,6 +8,7 @@ import 'package:inkfold_reader_api/inkfold_reader_api.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../core/inkfold_theme.dart';
+import '../core/pdf_font_manager.dart';
 import '../data/app_database.dart';
 import '../domain/reading_preferences.dart';
 import '../providers.dart';
@@ -473,6 +474,7 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
   Timer? _saveTimer;
   late int _currentPage;
   int _pageCount = 0;
+  bool _requestedMissingFonts = false;
 
   @override
   void initState() {
@@ -483,6 +485,7 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
       widget.document.bytes,
       sourceName: widget.book.sourceName,
       controller: _controller,
+      fontManager: inkfoldPdfFontManager,
       initialPageNumber: _currentPage,
       params: PdfViewerParams(
         backgroundColor: widget.colors.background,
@@ -494,6 +497,10 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
                 ? 1
                 : _currentPage.clamp(1, _pageCount);
           });
+          if (!_requestedMissingFonts) {
+            _requestedMissingFonts = true;
+            unawaited(document.reloadPages());
+          }
         },
         onPageChanged: _onPageChanged,
       ),
