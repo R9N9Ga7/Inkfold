@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inkfold_reader_api/inkfold_reader_api.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/inkfold_theme.dart';
 import '../core/pdf_font_manager.dart';
@@ -15,11 +19,56 @@ import '../providers.dart';
 
 typedef _LoadedBook = ({Book book, ReaderDocument document});
 
+const _translationChannel = MethodChannel('app.inkfold/translation');
+
 double? _readyMaxScrollExtent(ScrollController controller) {
   if (!controller.hasClients) return null;
   final position = controller.position;
   if (!position.hasContentDimensions) return null;
   return position.maxScrollExtent;
+}
+
+Uri _googleTranslateUri(String text, String targetLanguage) {
+  return Uri.https('translate.google.com', '/m', <String, String>{
+    'sl': 'auto',
+    'tl': targetLanguage,
+    'q': text.trim(),
+  });
+}
+
+Future<bool> _openNativeGoogleTranslate(String text) async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return false;
+  try {
+    return await _translationChannel.invokeMethod<bool>(
+          'translate',
+          <String, String>{'text': text},
+        ) ??
+        false;
+  } on Exception {
+    return false;
+  }
+}
+
+Future<void> _openGoogleTranslate(BuildContext context, String text) async {
+  final normalized = text.trim();
+  if (normalized.isEmpty) return;
+  final localeLanguage = Localizations.localeOf(context).languageCode;
+  final targetLanguage = localeLanguage == 'und' ? 'en' : localeLanguage;
+  if (await _openNativeGoogleTranslate(normalized)) return;
+  var launched = false;
+  try {
+    launched = await launchUrl(
+      _googleTranslateUri(normalized, targetLanguage),
+      mode: LaunchMode.inAppBrowserView,
+    );
+  } on Exception {
+    launched = false;
+  }
+  if (!launched && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not open Google Translate.')),
+    );
+  }
 }
 
 final class ReaderScreen extends ConsumerStatefulWidget {
@@ -180,7 +229,7 @@ final class _ReaderScreenState extends ConsumerState<ReaderScreen>
                     behavior: HitTestBehavior.translucent,
                     onTap: () =>
                         setState(() => _controlsVisible = !_controlsVisible),
-                    child: SelectionArea(
+                    child: _TranslatableSelectionArea(
                       child: SingleChildScrollView(
                         controller: _scrollController,
                         padding: EdgeInsets.fromLTRB(
@@ -209,7 +258,8 @@ final class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 44),
-                                for (final section in document.sections) ...<Widget>[
+                                for (final section
+                                    in document.sections) ...<Widget>[
                                   if (section.title != null)
                                     Padding(
                                       padding: const EdgeInsets.only(
@@ -221,8 +271,9 @@ final class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                         style: TextStyle(
                                           color: colors.text,
                                           fontFamily: 'Literata',
-                                          fontSize: (preferences.fontSize * 1.35)
-                                              .clamp(22, 34),
+                                          fontSize:
+                                              (preferences.fontSize * 1.35)
+                                                  .clamp(22, 34),
                                           height: 1.25,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -230,7 +281,9 @@ final class _ReaderScreenState extends ConsumerState<ReaderScreen>
                                     ),
                                   for (final block in section.blocks)
                                     Padding(
-                                      padding: const EdgeInsets.only(bottom: 22),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 22,
+                                      ),
                                       child: Text(
                                         block.text,
                                         textAlign: preferences.textAlign,
@@ -509,6 +562,23 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
       initialPageNumber: _currentPage,
       params: PdfViewerParams(
         backgroundColor: widget.colors.background,
+        customizeContextMenuItems: (params, items) {
+          final selection = params.textSelectionDelegate;
+          if (params.contextMenuFor != PdfViewerPart.selectedText ||
+              !selection.isCopyAllowed ||
+              !selection.hasSelectedText) {
+            return;
+          }
+          items.add(
+            ContextMenuButtonItem(
+              label: 'Translate',
+              onPressed: () {
+                params.dismissContextMenu();
+                unawaited(_translatePdfSelection(selection));
+              },
+            ),
+          );
+        },
         onViewerReady: (document, controller) {
           if (!mounted) return;
           setState(() {
@@ -532,6 +602,13 @@ final class _PdfReaderState extends ConsumerState<_PdfReader>
     setState(() => _currentPage = pageNumber);
     _saveTimer?.cancel();
     _saveTimer = Timer(const Duration(milliseconds: 450), _saveProgress);
+  }
+
+  Future<void> _translatePdfSelection(
+    PdfTextSelectionDelegate selection,
+  ) async {
+    final text = await selection.getSelectedText();
+    if (mounted) await _openGoogleTranslate(context, text);
   }
 
   double get _progress {
@@ -639,6 +716,56 @@ final class _ReaderBackScope extends StatelessWidget {
       if (!didPop) onBack();
     },
     child: child,
+  );
+}
+
+typedef _TranslateSelection = Future<void> Function(
+  BuildContext context,
+  String text,
+);
+
+final class _TranslatableSelectionArea extends StatefulWidget {
+  const _TranslatableSelectionArea({
+    required this.child,
+    this.onTranslate = _openGoogleTranslate,
+  });
+
+  final Widget child;
+  final _TranslateSelection onTranslate;
+
+  @override
+  State<_TranslatableSelectionArea> createState() =>
+      _TranslatableSelectionAreaState();
+}
+
+final class _TranslatableSelectionAreaState
+    extends State<_TranslatableSelectionArea> {
+  String _selectedText = '';
+
+  @override
+  Widget build(BuildContext context) => SelectionArea(
+    onSelectionChanged: (selection) {
+      final text = selection?.plainText.trim() ?? '';
+      if (text.isNotEmpty) _selectedText = text;
+    },
+    contextMenuBuilder: (context, selection) {
+      return AdaptiveTextSelectionToolbar.buttonItems(
+        anchors: selection.contextMenuAnchors,
+        buttonItems: <ContextMenuButtonItem>[
+          ...selection.contextMenuButtonItems,
+          ContextMenuButtonItem(
+            label: 'Translate',
+            onPressed: () {
+              final text = _selectedText.trim();
+              if (text.isEmpty) return;
+              selection.hideToolbar();
+              unawaited(widget.onTranslate(context, text));
+            },
+          ),
+        ],
+      );
+    },
+    child: widget.child,
   );
 }
 
@@ -933,6 +1060,22 @@ Widget buildReaderBackScopeForTest({
   required Widget child,
 }) {
   return _ReaderBackScope(onBack: onBack, child: child);
+}
+
+@visibleForTesting
+Uri buildGoogleTranslateUriForTest(String text, String targetLanguage) {
+  return _googleTranslateUri(text, targetLanguage);
+}
+
+@visibleForTesting
+Widget buildTranslatableSelectionAreaForTest({
+  required Widget child,
+  required Future<void> Function(String text) onTranslate,
+}) {
+  return _TranslatableSelectionArea(
+    onTranslate: (context, text) => onTranslate(text),
+    child: child,
+  );
 }
 
 final class _ReaderSlider extends StatelessWidget {
